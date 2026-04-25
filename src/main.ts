@@ -1,5 +1,6 @@
 import './style.css'
-import { resizeCanvas, drawBackground, canvas, ctx } from './canvas'
+import { resizeCanvas, drawBackground, setBackground, canvas, ctx } from './canvas'
+import type { BackgroundKey } from './canvas'
 import { loadAsteroids, pickCollisionPair, getAllSorted, getById } from './asteroids'
 import { drawAsteroid } from './renderer'
 import { spawnParticles, spawnFragments, updateParticles, drawParticles, getParticleCount, clearParticles, getParticles, getLockedCount, physics } from './simulation'
@@ -206,6 +207,15 @@ function setActiveEmotion(key: EmotionKey) {
 
 document.getElementById('trigger-btn')!.addEventListener('click', triggerCollision)
 
+// ── Background picker ─────────────────────────────────────────────────────────
+document.querySelectorAll<HTMLButtonElement>('.bg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setBackground(btn.dataset.bg as BackgroundKey)
+    document.querySelectorAll('.bg-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+  })
+})
+
 // ── Debug dots (fading) ───────────────────────────────────────────────────────
 const DEBUG_FADE_START = 3.0   // seconds before dots start fading
 const DEBUG_FADE_TOTAL = 5.0   // seconds until fully gone
@@ -238,6 +248,8 @@ function updateEmotionBars(raw: FaceApiScores) {
 // ── Visual effects state ──────────────────────────────────────────────────────
 let shakeMag   = 0
 let flashAlpha = 0
+let shockwave: { x: number; y: number; age: number } | null = null
+const SHOCKWAVE_DURATION = 0.5
 
 let lastTime = performance.now()
 
@@ -294,6 +306,7 @@ function loop(now: number) {
       spawnFragments(cx, midY, 120, 380)
       shakeMag   = 18
       flashAlpha = 0.45
+      shockwave  = { x: cx, y: midY, age: 0 }
       collisionPhase = 'impact'
       phaseStart     = now
     }
@@ -321,6 +334,28 @@ function loop(now: number) {
 
   updateParticles(dt)
   drawParticles()
+
+  if (shockwave) {
+    shockwave.age += dt
+    const t = Math.min(1, shockwave.age / SHOCKWAVE_DURATION)
+    if (t >= 1) {
+      shockwave = null
+    } else {
+      const maxR = Math.max(canvas.width, canvas.height) * 0.9
+      const r     = maxR * t
+      const alpha = (1 - t) * (1 - t)
+      const inner = r * 0.72
+      const grd   = ctx.createRadialGradient(shockwave.x, shockwave.y, inner, shockwave.x, shockwave.y, r)
+      grd.addColorStop(0,   'rgba(255,255,255,0)')
+      grd.addColorStop(0.5, `rgba(255,255,255,${alpha * 0.9})`)
+      grd.addColorStop(1,   'rgba(255,255,255,0)')
+      ctx.beginPath()
+      ctx.arc(shockwave.x, shockwave.y, r, 0, Math.PI * 2)
+      ctx.fillStyle = grd
+      ctx.fill()
+    }
+  }
+
   drawDebugDots(now)
 
   const total  = getParticleCount()

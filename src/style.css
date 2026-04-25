@@ -469,3 +469,42 @@ html, body {
   font-size: 0.7rem;
   color: var(--accent);
 }
+
+/* ── Background picker ── */
+#bg-picker {
+  position: fixed;
+  top: 12px;
+  left: var(--left-sidebar-width);
+  right: var(--sidebar-width);
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.bg-btn {
+  pointer-events: all;
+  font-family: var(--font);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  background: rgba(4,4,12,0.72);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+
+.bg-btn:hover {
+  color: var(--text);
+  border-color: rgba(255,255,255,0.25);
+}
+
+.bg-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}

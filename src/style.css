@@ -1,0 +1,471 @@
+:root {
+  --sidebar-width: 340px;
+  --left-sidebar-width: 240px;
+  --bg: #000005;
+  --panel-bg: rgba(255, 255, 255, 0.04);
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #7c6af7;
+  --accent-dim: rgba(124, 106, 247, 0.25);
+  --text: #e0e0e0;
+  --text-dim: #666;
+  --font: 'Courier New', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+#simulation {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: var(--left-sidebar-width);
+}
+
+/* ── Left sidebar ── */
+#left-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--left-sidebar-width);
+  height: 100vh;
+  background: rgba(4, 4, 12, 0.92);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#left-sidebar-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.eq-panel {
+  gap: 6px;
+}
+
+.eq-block {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(124, 106, 247, 0.15);
+  border-radius: 4px;
+  padding: 8px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.eq-line {
+  font-size: 0.62rem;
+  color: var(--text);
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+  font-family: var(--font);
+}
+
+.eq-line.eq-case {
+  color: var(--text-dim);
+  padding-left: 8px;
+}
+
+.eq-note {
+  font-size: 0.52rem;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  padding-left: 2px;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: rgba(4, 4, 12, 0.92);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#sidebar-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Panels ── */
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.panel-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  display: block;
+}
+
+/* ── Camera panel ── */
+#camera-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #0a0a14;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+#camera-status {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+
+#camera-btn {
+  font-family: var(--font);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#camera-btn:hover {
+  background: rgba(124, 106, 247, 0.4);
+}
+
+/* ── Emotion bars ── */
+.emotion-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.emotion-label {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  width: 48px;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+.emotion-value {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Emoji chips ── */
+#emoji-chips {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.chip {
+  font-size: 1.25rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  flex: 1;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.chip.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ── Sliders ── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slider-label {
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  width: 46px;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+}
+
+.slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.slider-value {
+  font-size: 0.58rem;
+  color: var(--text);
+  width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Trigger button ── */
+#trigger-btn {
+  font-family: var(--font);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 9px;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+#trigger-btn:hover {
+  background: rgba(124, 106, 247, 0.4);
+}
+
+/* ── Asteroid selector ── */
+.selector-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selector-label {
+  font-size: 0.65rem;
+  color: var(--accent);
+  font-weight: bold;
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.selector-row select {
+  flex: 1;
+  font-family: var(--font);
+  font-size: 0.58rem;
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  outline: none;
+  max-width: 100%;
+}
+
+.selector-row select:focus {
+  border-color: var(--accent);
+}
+
+#randomize-btn {
+  font-family: var(--font);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  width: 100%;
+  text-align: center;
+}
+
+#randomize-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Asteroid info ── */
+.asteroid-info-cols {
+  display: flex;
+  gap: 6px;
+}
+
+.asteroid-info-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.asteroid-info-divider {
+  width: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.info-name {
+  font-size: 0.62rem;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.info-lbl {
+  font-size: 0.52rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.info-val {
+  font-size: 0.52rem;
+  color: var(--text);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Stats ── */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+
+.stat-value {
+  font-size: 0.65rem;
+  color: var(--text);
+}
+
+/* ── Asteroid names bar ── */
+#asteroid-names {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+#asteroid-a, #asteroid-b {
+  font-size: 0.55rem;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+}
+
+#asteroid-b {
+  text-align: right;
+}
+
+.asteroid-detail {
+  display: block;
+  font-size: 0.48rem;
+  color: rgba(255, 255, 255, 0.22);
+  letter-spacing: 0.04em;
+}
+
+#asteroid-sep {
+  font-size: 0.7rem;
+  color: var(--accent);
+}

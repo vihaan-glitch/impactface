@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>impactface</title>
+  </head>
+  <body>
+    <canvas id="simulation"></canvas>
+
+    <!-- Left sidebar: physics equations -->
+    <aside id="left-sidebar">
+      <h1 id="left-sidebar-title">PHYSICS</h1>
+
+      <section class="panel eq-panel">
+        <label class="panel-label">VELOCITY VERLET</label>
+        <div class="eq-block">
+          <div class="eq-line">x′ = x + v·dt + ½a·dt²</div>
+          <div class="eq-line">a′ = F(x′) / m</div>
+          <div class="eq-line">v′ = v + ½(a + a′)·dt</div>
+        </div>
+        <div class="eq-note">3-pass: pos → forces → vel</div>
+      </section>
+
+      <section class="panel eq-panel">
+        <label class="panel-label">SOFTENED N-BODY GRAVITY</label>
+        <div class="eq-block">
+          <div class="eq-line">r² = Δx²+Δy²+ε²</div>
+          <div class="eq-line">r³ = r² · √r²</div>
+          <div class="eq-line">aᵢ += G·mⱼ·Δr / r³</div>
+          <div class="eq-line">aⱼ -= G·mᵢ·Δr / r³</div>
+        </div>
+        <div class="eq-note">ε softens r→0 blowup<br>N(N-1)/2 pairs via 3rd law</div>
+      </section>
+
+      <section class="panel eq-panel">
+        <label class="panel-label">GOAL SPRING (FORMATION)</label>
+        <div class="eq-block">
+          <div class="eq-line">ρ = (t − t_d) / t_r</div>
+          <div class="eq-line">ρ = clamp(ρ, 0, 1)</div>
+          <div class="eq-line">F = k · ρ · (x* − x)</div>
+        </div>
+        <div class="eq-note">t_d = drift delay<br>t_r = ramp duration<br>x* = target pixel</div>
+      </section>
+
+      <section class="panel eq-panel">
+        <label class="panel-label">VELOCITY DAMPING</label>
+        <div class="eq-block">
+          <div class="eq-line">v ← v · d</div>
+          <div class="eq-line eq-case">d = d_b  if t &lt; t_d</div>
+          <div class="eq-line eq-case">d = d_f  if t ≥ t_d</div>
+        </div>
+        <div class="eq-note">d_b = burst damp (looser)<br>d_f = form damp (tighter)</div>
+      </section>
+
+      <section class="panel eq-panel">
+        <label class="panel-label">LOCK CONDITION</label>
+        <div class="eq-block">
+          <div class="eq-line">|x − x*| &lt; r_lock</div>
+          <div class="eq-line">→ v = 0, a = 0</div>
+          <div class="eq-line">→ frozen in place</div>
+        </div>
+        <div class="eq-note">r_lock = 4 px snap radius</div>
+      </section>
+
+      <section class="panel eq-panel">
+        <label class="panel-label">HUNGARIAN ASSIGNMENT</label>
+        <div class="eq-block">
+          <div class="eq-line">cost(i,j) = |pᵢ − t_j|²</div>
+          <div class="eq-line">min Σ cost(i, σ(i))</div>
+        </div>
+        <div class="eq-note">O(n³) Jonker-Volgenant<br>optimal particle↔pixel map</div>
+      </section>
+    </aside>
+
+    <aside id="sidebar">
+      <h1 id="sidebar-title">IMPACTFACE</h1>
+
+      <!-- Camera feed -->
+      <section class="panel" id="camera-panel">
+        <label class="panel-label">LIVE INPUT</label>
+        <div id="camera-frame">
+          <video id="camera-feed" autoplay muted playsinline></video>
+          <span id="camera-status">camera inactive</span>
+        </div>
+        <button id="camera-btn">enable camera</button>
+      </section>
+
+      <!-- Emotion confidence bars -->
+      <section class="panel" id="emotion-panel">
+        <label class="panel-label">EMOTION DETECTION</label>
+        <div class="emotion-row">
+          <span class="emotion-label">joy</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-joy" style="width:0%"></div></div>
+          <span class="emotion-value" id="val-joy">0%</span>
+        </div>
+        <div class="emotion-row">
+          <span class="emotion-label">anger</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-anger" style="width:0%"></div></div>
+          <span class="emotion-value" id="val-anger">0%</span>
+        </div>
+        <div class="emotion-row">
+          <span class="emotion-label">fear</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-fear" style="width:0%"></div></div>
+          <span class="emotion-value" id="val-fear">0%</span>
+        </div>
+        <div class="emotion-row">
+          <span class="emotion-label">sadness</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-sadness" style="width:0%"></div></div>
+          <span class="emotion-value" id="val-sadness">0%</span>
+        </div>
+        <div class="emotion-row">
+          <span class="emotion-label">surprise</span>
+          <div class="bar-track"><div class="bar-fill" id="bar-surprise" style="width:0%"></div></div>
+          <span class="emotion-value" id="val-surprise">0%</span>
+        </div>
+      </section>
+
+      <!-- Manual emoji override -->
+      <section class="panel" id="override-panel">
+        <label class="panel-label">MANUAL OVERRIDE</label>
+        <div id="emoji-chips">
+          <button class="chip" data-emotion="joy">😄</button>
+          <button class="chip" data-emotion="anger">😠</button>
+          <button class="chip" data-emotion="fear">😨</button>
+          <button class="chip" data-emotion="sadness">😢</button>
+          <button class="chip" data-emotion="surprise">😲</button>
+        </div>
+      </section>
+
+      <!-- Trigger + particle count -->
+      <section class="panel" id="trigger-panel">
+        <label class="panel-label">COLLISION</label>
+        <div class="slider-row">
+          <span class="slider-label">particles</span>
+          <input type="range" id="particle-count" min="25" max="200" value="50" step="5" />
+          <span class="slider-value" id="particle-count-val">50</span>
+        </div>
+        <button id="trigger-btn">trigger collision</button>
+      </section>
+
+      <!-- Asteroid selector -->
+      <section class="panel" id="asteroid-selector-panel">
+        <label class="panel-label">ASTEROID SELECTION</label>
+        <div class="selector-row">
+          <span class="selector-label">A</span>
+          <select id="select-a"></select>
+        </div>
+        <div class="selector-row">
+          <span class="selector-label">B</span>
+          <select id="select-b"></select>
+        </div>
+        <button id="randomize-btn">randomize pair</button>
+      </section>
+
+      <!-- Asteroid info panels -->
+      <section class="panel" id="asteroid-info-panel">
+        <label class="panel-label">ASTEROID DATA</label>
+        <div class="asteroid-info-cols">
+          <div class="asteroid-info-col" id="info-a">
+            <span class="info-name" id="info-a-name">—</span>
+            <div class="info-row"><span class="info-lbl">diam</span><span class="info-val" id="info-a-diam">—</span></div>
+            <div class="info-row"><span class="info-lbl">mass</span><span class="info-val" id="info-a-mass">—</span></div>
+            <div class="info-row"><span class="info-lbl">albedo</span><span class="info-val" id="info-a-albedo">—</span></div>
+            <div class="info-row"><span class="info-lbl">type</span><span class="info-val" id="info-a-type">—</span></div>
+            <div class="info-row"><span class="info-lbl">SMA</span><span class="info-val" id="info-a-sma">—</span></div>
+          </div>
+          <div class="asteroid-info-divider"></div>
+          <div class="asteroid-info-col" id="info-b">
+            <span class="info-name" id="info-b-name">—</span>
+            <div class="info-row"><span class="info-lbl">diam</span><span class="info-val" id="info-b-diam">—</span></div>
+            <div class="info-row"><span class="info-lbl">mass</span><span class="info-val" id="info-b-mass">—</span></div>
+            <div class="info-row"><span class="info-lbl">albedo</span><span class="info-val" id="info-b-albedo">—</span></div>
+            <div class="info-row"><span class="info-lbl">type</span><span class="info-val" id="info-b-type">—</span></div>
+            <div class="info-row"><span class="info-lbl">SMA</span><span class="info-val" id="info-b-sma">—</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Physics sliders -->
+      <section class="panel" id="physics-panel">
+        <label class="panel-label">PHYSICS</label>
+        <div class="slider-row">
+          <span class="slider-label">gravity</span>
+          <input type="range" id="sl-gravity" min="0" max="200000" value="50000" step="1000" />
+          <span class="slider-value" id="sv-gravity">50000</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">spring</span>
+          <input type="range" id="sl-spring" min="1" max="60" value="15" step="1" />
+          <span class="slider-value" id="sv-spring">15</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">drift s</span>
+          <input type="range" id="sl-drift" min="0" max="4" value="1.0" step="0.1" />
+          <span class="slider-value" id="sv-drift">1.0</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">ramp s</span>
+          <input type="range" id="sl-ramp" min="0.5" max="10" value="3.0" step="0.5" />
+          <span class="slider-value" id="sv-ramp">3.0</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">b.damp</span>
+          <input type="range" id="sl-bdamp" min="0.90" max="1.00" value="0.985" step="0.005" />
+          <span class="slider-value" id="sv-bdamp">0.985</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">f.damp</span>
+          <input type="range" id="sl-fdamp" min="0.80" max="1.00" value="0.96" step="0.005" />
+          <span class="slider-value" id="sv-fdamp">0.96</span>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="panel" id="stats-panel">
+        <label class="panel-label">SIMULATION STATS</label>
+        <div class="stat-row">
+          <span class="stat-label">particles</span>
+          <span class="stat-value" id="stat-particles">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">formed</span>
+          <span class="stat-value" id="stat-formed">0%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">phase</span>
+          <span class="stat-value" id="stat-phase">idle</span>
+        </div>
+      </section>
+
+      <!-- Asteroid names bar -->
+      <section id="asteroid-names">
+        <span id="asteroid-a">— —</span>
+        <span id="asteroid-sep">⚡</span>
+        <span id="asteroid-b">— —</span>
+      </section>
+    </aside>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
